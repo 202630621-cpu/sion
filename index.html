@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>심심할 때 뭐 하지?</title>
+    <title>TIME ATTACK - 약속 준비 타임어택</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #0f1117;
+            --card-bg: #1a1d26;
+            --primary: #ccff00; /* 네온 라임 */
+            --accent: #ff4757; /* 네온 레드/오렌지 */
+            --text-main: #ffffff;
+            --text-sub: #9e9ea7;
+            --border: #2e3240;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -13,28 +25,420 @@
         }
 
         body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f4f6f8;
+            padding: 20px;
         }
 
         .container {
-            background-color: white;
-            padding: 2.5rem;
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
             border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            text-align: center;
-            max-width: 450px;
-            width: 90%;
+            padding: 30px 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
         }
 
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: #333;
+        header {
+            text-align: center;
+            margin-bottom: 24px;
         }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: var(--primary);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        /* Input Form */
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="time"], input[type="number"] {
+            background: #252936;
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .task-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .task-input-row input[type="text"] {
+            flex: 2;
+        }
+
+        .task-input-row input[type="number"] {
+            flex: 1;
+        }
+
+        .btn-add {
+            background: #2e3240;
+            color: var(--text-main);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-add:hover {
+            background: #3d4254;
+        }
+
+        /* Task List */
+        .task-list {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #252936;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .task-item span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .btn-start {
+            margin-top: 24px;
+            width: 100%;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(204, 255, 0, 0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-start:active {
+            transform: scale(0.98);
+        }
+
+        /* Active Timer Screen */
+        .active-section {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .current-task-badge {
+            background: rgba(204, 255, 0, 0.1);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .current-task-title {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .timer-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 64px;
+            font-weight: 900;
+            color: var(--primary);
+            margin: 10px 0 20px 0;
+            text-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
+        }
+
+        .timer-display.danger {
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(255, 71, 87, 0.6);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .next-task-info {
+            color: var(--text-sub);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .btn-next {
+            width: 100%;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            margin-top: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* Success Screen */
+        .success-section {
+            display: none;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .success-icon {
+            font-size: 60px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- SETUP VIEW -->
+    <div id="setup-view">
+        <header>
+            <h1>TIME ATTACK</h1>
+            <p>미적거릴 시간이 없다! 미션 완수하듯 준비하기</p>
+        </header>
+
+        <div class="input-section">
+            <div class="form-group">
+                <label for="target-time">목표 출발/완료 시간</label>
+                <input type="time" id="target-time">
+            </div>
+
+            <div class="form-group">
+                <label>할 일 및 걸리는 시간 추가</label>
+                <div class="task-input-row">
+                    <input type="text" id="task-name" placeholder="예: 샤워하기">
+                    <input type="number" id="task-duration" placeholder="분" min="1">
+                    <button class="btn-add" onclick="addTask()">추가</button>
+                </div>
+            </div>
+
+            <div class="task-list" id="task-list">
+                <!-- Task items will be inserted here dynamically -->
+            </div>
+
+            <button class="btn-start" onclick="startAttack()">타임어택 시작 🚀</button>
+        </div>
+    </div>
+
+    <!-- ACTIVE TIMER VIEW -->
+    <div id="active-view" class="active-section">
+        <div class="current-task-badge" id="step-badge">STEP 1/3</div>
+        <div class="current-task-title" id="current-task-name">샤워하기</div>
+        
+        <div class="timer-display" id="timer">15:00</div>
+        
+        <div class="next-task-info" id="next-task-info">다음: 옷 입기 (10분)</div>
+
+        <button class="btn-next" onclick="nextTask()">완료! 다음 단계 ➔</button>
+        <button class="btn-cancel" onclick="resetAll()">포기하고 처음으로</button>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="success-view" class="success-section">
+        <div class="success-icon">🎉</div>
+        <h2 style="font-size: 24px; margin-bottom: 8px;">타임어택 성공!</h2>
+        <p style="color: var(--text-sub); margin-bottom: 24px;">약속 시간에 늦지 않게 준비를 완료했습니다.</p>
+        <button class="btn-start" onclick="resetAll()">새로운 약속 설정하기</button>
+    </div>
+</div>
+
+<script>
+    let tasks = [];
+    let currentTaskIndex = 0;
+    let timerInterval = null;
+    let timeRemaining = 0;
+
+    function addTask() {
+        const nameInput = document.getElementById('task-name');
+        const durationInput = document.getElementById('task-duration');
+
+        const name = nameInput.value.trim();
+        const duration = parseInt(durationInput.value);
+
+        if (!name || isNaN(duration) || duration <= 0) {
+            alert('할 일 이름과 소요 시간(분)을 올바르게 입력해주세요.');
+            return;
+        }
+
+        tasks.push({ name, duration });
+        renderTasks();
+
+        nameInput.value = '';
+        durationInput.value = '';
+        nameInput.focus();
+    }
+
+    function renderTasks() {
+        const listContainer = document.getElementById('task-list');
+        listContainer.innerHTML = '';
+
+        tasks.forEach((task, index) => {
+            const item = document.createElement('div');
+            item.className = 'task-item';
+            item.innerHTML = `
+                <div>${index + 1}. ${task.name}</div>
+                <span>${task.duration}분</span>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+
+    function startAttack() {
+        if (tasks.length === 0) {
+            alert('최소 하나 이상의 할 일을 추가해 주세요!');
+            return;
+        }
+
+        document.getElementById('setup-view').style.display = 'none';
+        document.getElementById('active-view').style.display = 'flex';
+
+        currentTaskIndex = 0;
+        loadTask(currentTaskIndex);
+    }
+
+    function loadTask(index) {
+        if (index >= tasks.length) {
+            showSuccess();
+            return;
+        }
+
+        const task = tasks[index];
+        document.getElementById('step-badge').innerText = `STEP ${index + 1}/${tasks.length}`;
+        document.getElementById('current-task-name').innerText = task.name;
+
+        // Next task label
+        if (index + 1 < tasks.length) {
+            const next = tasks[index + 1];
+            document.getElementById('next-task-info').innerText = `다음: ${next.name} (${next.duration}분)`;
+        } else {
+            document.getElementById('next-task-info').innerText = '마지막 단계입니다!';
+        }
+
+        timeRemaining = task.duration * 60;
+        updateTimerDisplay();
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeRemaining--;
+            updateTimerDisplay();
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                alert(`시간 종료! '${task.name}' 항목을 마쳤다면 다음 단계로 넘어가세요.`);
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const timerElement = document.getElementById('timer');
+        const minutes = Math.floor(Math.abs(timeRemaining) / 60);
+        const seconds = Math.abs(timeRemaining) % 60;
+
+        const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        timerElement.innerText = formatted;
+
+        if (timeRemaining < 60) {
+            timerElement.classList.add('danger');
+        } else {
+            timerElement.classList.remove('danger');
+        }
+    }
+
+    function nextTask() {
+        clearInterval(timerInterval);
+        currentTaskIndex++;
+        loadTask(currentTaskIndex);
+    }
+
+    function showSuccess() {
+        clearInterval(timerInterval);
+        document.getElementById('active-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'block';
+    }
+
+    function resetAll() {
+        clearInterval(timerInterval);
+        tasks = [];
+        currentTaskIndex = 0;
+        renderTasks();
+
+        document.getElementById('setup-view').style.display = 'block';
+        document.getElementById('active-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>        }
 
         p.subtitle {
             color: #666;
