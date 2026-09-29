@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIME ATTACK - 약속 준비 타임어택</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0f1117;
+            --card-bg: #1a1d26;
+            --card-sub: #252936;
+            --primary: #ccff00;
+            --primary-hover: #b3e600;
+            --secondary: #00f2fe;
+            --accent: #ff4757;
+            --text-main: #ffffff;
+            --text-sub: #9e9ea7;
+            --border: #2e3240;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1d26;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2e3240;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ccff00;
+        }
+
+        /* Danger pulse animation for timer under 1 minute */
+        @keyframes danger-glow {
+            0%, 100% {
+                text-shadow: 0 0 15px rgba(255, 71, 87, 0.9), 0 0 30px rgba(255, 71, 87, 0.5);
+                color: #ff4757;
+            }
+            50% {
+                text-shadow: 0 0 5px rgba(255, 71, 87, 0.3);
+                color: #ff7675;
+            }
+        }
+
+        .timer-danger {
+            animation: danger-glow 1s infinite ease-in-out;
+        }
+
+        /* Neon Primary Button */
+        .btn-neon {
+            background-color: var(--primary);
+            color: #0f1117;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-neon:hover {
+            background-color: var(--primary-hover);
+            box-shadow: 0 0 20px rgba(204, 255, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-neon:active {
+            transform: translateY(1px);
+        }
+
+        /* Interactive cards */
+        .task-item {
+            transition: all 0.2s ease;
+        }
+
+        .task-item:hover {
+            border-color: rgba(204, 255, 0, 0.3);
+            background-color: #2a2e3d;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 sm:p-5">
+
+    <div class="w-full max-w-md bg-[#1a1d26] rounded-2xl p-5 sm:p-7 shadow-2xl border border-[#2e3240] relative overflow-hidden my-auto">
+        
+        <!-- App Header -->
+        <header class="text-center mb-5">
+            <div class="inline-flex items-center justify-center space-x-2 mb-1">
+                <i class="fa-solid fa-bolt text-[#ccff00] text-2xl"></i>
+                <h1 class="font-orbitron font-black text-2xl tracking-wider text-[#ccff00]">TIME ATTACK</h1>
+            </div>
+            <p class="text-xs sm:text-sm text-[#9e9ea7] font-medium">미적거릴 시간이 없다! 타임어택 약속 준비</p>
+        </header>
+
+        <!-- SETUP VIEW -->
+        <div id="setup-view" class="space-y-4">
+            
+            <!-- Target Departure Time Input -->
+            <div class="space-y-1.5">
+                <label for="target-time" class="text-xs font-bold text-[#9e9ea7] uppercase tracking-wider flex items-center justify-between">
+                    <span class="flex items-center gap-1.5"><i class="fa-regular fa-clock text-[#ccff00]"></i> 목표 약속 / 출발 시간</span>
+                    <span id="target-date-hint" class="text-[11px] text-[#ccff00] font-bold">오늘</span>
+                </label>
+                <input type="time" id="target-time" onchange="calculateTimeBudget()" class="w-full bg-[#252936] border border-[#2e3240] text-white px-4 py-3 rounded-xl focus:outline-none focus:border-[#ccff00] font-orbitron text-xl font-bold transition-all text-center">
+            </div>
+
+            <!-- TIME CALCULATION & ALLOCATION PANEL -->
+            <div class="bg-[#252936] border border-[#2e3240] rounded-xl p-3.5 space-y-2.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-[#9e9ea7] flex items-center gap-1.5"><i class="fa-solid fa-hourglass text-gray-400"></i> 약속까지 총 남은 시간:</span>
+                    <span id="budget-total-time" class="font-orbitron font-bold text-white">0분</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-[#9e9ea7] flex items-center gap-1.5"><i class="fa-solid fa-list-check text-gray-400"></i> 준비 총 소요 시간:</span>
+                    <span id="budget-task-time" class="font-orbitron font-bold text-[#00f2fe]">0분</span>
+                </div>
+                <div class="border-t border-[#2e3240] pt-2 flex justify-between items-center text-xs font-bold">
+                    <span class="text-gray-300 flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-[#ccff00]"></i> 배분 후 남은 시간:</span>
+                    <span id="budget-remaining-time" class="font-orbitron text-sm text-[#ccff00]">0분</span>
+                </div>
+            </div>
+
+            <!-- Task Input Form -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-[#9e9ea7] uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus-circle text-[#ccff00]"></i> 할 일 추가하기
+                </label>
+                <div class="flex gap-2">
+                    <input type="text" id="task-name" placeholder="예: 샤워하기, 옷 입기" class="flex-1 bg-[#252936] border border-[#2e3240] text-white px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#ccff00] transition-all">
+                    <input type="number" id="task-duration" placeholder="분" min="1" max="180" class="w-20 bg-[#252936] border border-[#2e3240] text-white px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#ccff00] transition-all text-center font-bold">
+                    <button onclick="addTask()" class="bg-[#2e3240] hover:bg-[#3d4254] text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Task List Header & Controls -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center px-1">
+                    <div class="flex items-center space-x-2">
+                        <span id="task-count" class="text-xs text-[#ccff00] font-bold">0개 항목</span>
+                        <span class="text-xs text-[#9e9ea7]">| 순서 조정 (▲▼)</span>
+                    </div>
+                    <button onclick="clearAllTasks()" class="text-xs text-[#ff4757] hover:text-red-400 font-semibold transition-colors flex items-center gap-1 bg-[#252936] hover:bg-[#2d1b24] px-2.5 py-1 rounded-lg border border-[#3a2029]">
+                        <i class="fa-solid fa-rotate-left"></i> 초기화
+                    </button>
+                </div>
+                
+                <!-- Dynamic Task List -->
+                <div id="task-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <!-- Tasks rendered here -->
+                </div>
+            </div>
+
+            <!-- Quick Routine Presets (Empty by default) -->
+            <div class="pt-2 space-y-2 border-t border-[#2e3240]">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-[#9e9ea7] font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-bolt text-[#ccff00]"></i> 빠른 루틴
+                    </span>
+                    <button onclick="openPresetManageModal()" class="text-xs text-[#ccff00] hover:underline font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-pen-to-square"></i> 루틴 추가/편집
+                    </button>
+                </div>
+                
+                <div id="preset-chip-list" class="flex flex-wrap gap-1.5">
+                    <!-- Preset chips or Empty state rendered here -->
+                </div>
+            </div>
+
+            <!-- Start Attack Button -->
+            <button onclick="startAttack()" class="w-full btn-neon font-extrabold text-base py-3.5 rounded-xl shadow-lg mt-3 flex items-center justify-center space-x-2">
+                <span>타임어택 시작</span>
+                <i class="fa-solid fa-rocket"></i>
+            </button>
+        </div>
+
+        <!-- ACTIVE TIMER VIEW -->
+        <div id="active-view" class="hidden flex-col items-center text-center space-y-5">
+            <!-- Overall Appointment Countdown Banner -->
+            <div class="w-full bg-[#252936] border border-[#2e3240] rounded-xl p-3.5 flex justify-between items-center">
+                <span class="text-xs font-bold text-[#9e9ea7] flex items-center gap-1.5">
+                    <i class="fa-solid fa-hourglass-half text-[#ccff00]"></i> 약속 시간까지 남은 시간
+                </span>
+                <span id="target-countdown" class="font-orbitron font-extrabold text-lg text-[#ccff00]">00:00:00</span>
+            </div>
+
+            <!-- Step Badge & Current Task Title -->
+            <div class="space-y-1">
+                <span id="step-badge" class="inline-block bg-[rgba(204,255,0,0.1)] text-[#ccff00] border border-[rgba(204,255,0,0.3)] text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider">
+                    STEP 1/3
+                </span>
+                <h2 id="current-task-name" class="text-2xl font-black text-white pt-2">샤워하기</h2>
+            </div>
+
+            <!-- Step Timer Display -->
+            <div id="timer" class="font-orbitron text-6xl font-black text-[#ccff00] tracking-tight py-2 my-1" style="text-shadow: 0 0 20px rgba(204, 255, 0, 0.4);">
+                15:00
+            </div>
+
+            <!-- Next Task Preview -->
+            <div id="next-task-container" class="bg-[#252936]/60 border border-[#2e3240] rounded-lg px-4 py-2.5 w-full text-xs text-[#9e9ea7] flex items-center justify-between">
+                <span><i class="fa-solid fa-forward text-gray-400 mr-1.5"></i>다음 할 일</span>
+                <span id="next-task-info" class="font-bold text-gray-200">옷 입기 (10분)</span>
+            </div>
+
+            <!-- Next Step Action Button -->
+            <button onclick="nextTask()" class="w-full btn-neon font-black text-lg py-4 rounded-xl shadow-lg flex items-center justify-center space-x-2">
+                <span>완료! 다음 단계</span>
+                <i class="fa-solid fa-circle-arrow-right"></i>
+            </button>
+
+            <!-- Abort Button -->
+            <button onclick="resetAll()" class="text-xs text-[#9e9ea7] hover:text-white underline pt-1 transition-colors">
+                포기하고 처음으로 돌아가기
+            </button>
+        </div>
+
+        <!-- SUCCESS VIEW -->
+        <div id="success-view" class="hidden text-center py-6 space-y-5">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-[rgba(204,255,0,0.1)] border-2 border-[#ccff00] rounded-full text-4xl mb-1 animate-bounce">
+                🎉
+            </div>
+            <div class="space-y-2">
+                <h2 class="text-2xl font-black text-white">타임어택 완벽 성공!</h2>
+                <p class="text-sm text-[#9e9ea7] max-w-xs mx-auto">
+                    약속 시간에 늦지 않게 모든 준비를 완료했습니다. 기분 좋게 출발하세요!
+                </p>
+            </div>
+            
+            <button onclick="resetAll()" class="w-full btn-neon font-extrabold text-base py-4 rounded-xl shadow-lg flex items-center justify-center space-x-2">
+                <span>새로운 약속 설정하기</span>
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- PRESET MANAGEMENT MODAL -->
+    <div id="preset-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-40 hidden">
+        <div class="bg-[#1a1d26] border border-[#2e3240] rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-[#2e3240] pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-[#ccff00]"></i> 빠른 루틴 목록 관리
+                </h3>
+                <button onclick="closePresetManageModal()" class="text-gray-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-[#9e9ea7] uppercase">새 빠른 루틴 추가</label>
+                <div class="flex gap-2">
+                    <input type="text" id="new-preset-name" placeholder="루틴명 (예: 가방 싸기)" class="flex-1 bg-[#252936] border border-[#2e3240] text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-[#ccff00]">
+                    <input type="number" id="new-preset-duration" placeholder="분" min="1" max="180" class="w-16 bg-[#252936] border border-[#2e3240] text-white px-2 py-2 rounded-xl text-xs focus:outline-none focus:border-[#ccff00] text-center font-bold">
+                    <button onclick="saveNewPreset()" class="bg-[#ccff00] text-black px-3 py-2 rounded-xl font-bold text-xs hover:bg-[#b3e600]">추가</button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5 max-h-52 overflow-y-auto pr-1" id="preset-edit-list">
+                <!-- Editable preset items inserted here -->
+            </div>
+
+            <div class="pt-2">
+                <button onclick="closePresetManageModal()" class="w-full bg-[#252936] hover:bg-[#2e3240] border border-[#2e3240] text-white text-xs font-bold py-2.5 rounded-xl">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Banner -->
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-[#1a1d26] border-2 border-[#ccff00] text-white px-5 py-3.5 rounded-2xl shadow-2xl z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px] max-w-xs text-center font-bold text-sm flex items-center space-x-2">
+        <i class="fa-solid fa-fire text-[#ccff00] text-lg"></i>
+        <span id="toast-message">메시지 내용</span>
+    </div>
+
+    <script>
+        // Start with EMPTY presets list by default
+        let presets = [];
+
+        // Sample initial task for demo
+        let tasks = [
+            { id: 1, name: '샤워 및 머리 말리기', duration: 15 },
+            { id: 2, name: '옷 입기 및 외출 준비', duration: 10 }
+        ];
+
+        let currentTaskIndex = 0;
+        let taskTimerInterval = null;
+        let targetTimerInterval = null;
+        let budgetTimerInterval = null;
+        let timeRemaining = 0;
+        let targetTimeObject = null;
+
+        const cheerMessages = [
+            "🔥 나이스! 페이스 아주 좋습니다. 이대로 가죠!",
+            "⚡️ 엄청 빠른데요? 딴짓할 겨를도 없군요!",
+            "👏 하나 해결! 망설이지 말고 바로 다음으로 돌진!",
+            "🚀 집중력 대단합니다! 완벽하게 흐름 탔어요.",
+            "✨ 지체할 시간 없습니다! 다음 단계도 단숨에 컷!"
+        ];
+
+        window.onload = function() {
+            loadPresets();
+
+            // Default target time (+45 mins from current time)
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 45);
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('target-time').value = `${hours}:${minutes}`;
+
+            renderTasks();
+            renderPresetChips();
+            calculateTimeBudget();
+
+            // Recalculate time budget every 30s
+            budgetTimerInterval = setInterval(calculateTimeBudget, 30000);
+        };
+
+        function loadPresets() {
+            const saved = localStorage.getItem('timeattack_presets');
+            if (saved) {
+                try {
+                    presets = JSON.parse(saved);
+                } catch(e) {
+                    presets = [];
+                }
+            } else {
+                presets = [];
+            }
+        }
+
+        function savePresetsToStorage() {
+            localStorage.setItem('timeattack_presets', JSON.stringify(presets));
+            renderPresetChips();
+        }
+
+        function renderPresetChips() {
+            const chipContainer = document.getElementById('preset-chip-list');
+            chipContainer.innerHTML = '';
+
+            if (presets.length === 0) {
+                chipContainer.innerHTML = `
+                    <div class="w-full text-xs text-[#9e9ea7] bg-[#252936]/50 border border-dashed border-[#2e3240] rounded-xl py-2.5 px-3 flex items-center justify-between">
+                        <span>등록된 빠른 루틴이 없습니다.</span>
+                        <button onclick="openPresetManageModal()" class="text-[#ccff00] font-bold hover:underline">
+                            + 나만의 루틴 만들기
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            presets.forEach(preset => {
+                const btn = document.createElement('button');
+                btn.className = 'preset-chip text-xs bg-[#252936] hover:bg-[#2e3240] border border-[#2e3240] hover:border-[#ccff00]/50 text-gray-300 px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1';
+                btn.onclick = () => addPresetToTasks(preset.name, preset.duration);
+                btn.innerHTML = `+ ${escapeHtml(preset.name)} <span class="text-[#ccff00] font-bold">(${preset.duration}분)</span>`;
+                chipContainer.appendChild(btn);
+            });
+        }
+
+        function openPresetManageModal() {
+            renderPresetEditList();
+            document.getElementById('preset-modal').classList.remove('hidden');
+        }
+
+        function closePresetManageModal() {
+            document.getElementById('preset-modal').classList.add('hidden');
+        }
+
+        function renderPresetEditList() {
+            const list = document.getElementById('preset-edit-list');
+            list.innerHTML = '';
+
+            if (presets.length === 0) {
+                list.innerHTML = `<div class="text-xs text-center text-gray-500 py-4">등록된 빠른 루틴이 없습니다.<br>위에서 새로 추가해보세요!</div>`;
+                return;
+            }
+
+            presets.forEach((preset, idx) => {
+                const item = document.createElement('div');
+                item.className = 'bg-[#252936] p-2.5 rounded-xl border border-[#2e3240] flex justify-between items-center text-xs';
+                item.innerHTML = `
+                    <span class="text-white font-semibold">${escapeHtml(preset.name)} <span class="text-[#ccff00]">(${preset.duration}분)</span></span>
+                    <button onclick="deletePreset(${idx})" class="text-gray-500 hover:text-[#ff4757] p-1"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function saveNewPreset() {
+            const nameInput = document.getElementById('new-preset-name');
+            const durationInput = document.getElementById('new-preset-duration');
+
+            const name = nameInput.value.trim();
+            const duration = parseInt(durationInput.value, 10);
+
+            if (!name || isNaN(duration) || duration <= 0) {
+                showToast("루틴 이름과 시간을 올바르게 입력하세요.");
+                return;
+            }
+
+            presets.push({ id: Date.now(), name, duration });
+            savePresetsToStorage();
+
+            nameInput.value = '';
+            durationInput.value = '';
+            renderPresetEditList();
+            showToast("새 빠른 루틴이 저장되었습니다!");
+        }
+
+        function deletePreset(index) {
+            presets.splice(index, 1);
+            savePresetsToStorage();
+            renderPresetEditList();
+        }
+
+        function addPresetToTasks(name, duration) {
+            tasks.push({ id: Date.now(), name, duration });
+            renderTasks();
+            calculateTimeBudget();
+            showToast(`'${name}' 항목이 추가되었습니다.`);
+        }
+
+        function calculateTimeBudget() {
+            const targetTimeValue = document.getElementById('target-time').value;
+            const totalAvailableElem = document.getElementById('budget-total-time');
+            const totalTaskElem = document.getElementById('budget-task-time');
+            const remainingElem = document.getElementById('budget-remaining-time');
+            const dateHintElem = document.getElementById('target-date-hint');
+
+            if (!targetTimeValue) {
+                totalAvailableElem.innerText = '0분';
+                remainingElem.innerText = '0분';
+                return;
+            }
+
+            const now = new Date();
+            const [hours, minutes] = targetTimeValue.split(':');
+            let target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(hours, 10), parseInt(minutes, 10), 0);
+
+            if (target < now) {
+                target.setDate(target.getDate() + 1);
+                dateHintElem.innerText = "내일";
+            } else {
+                dateHintElem.innerText = "오늘";
+            }
+
+            const totalAvailableMinutes = Math.max(0, Math.floor((target - now) / (1000 * 60)));
+            const totalTaskMinutes = tasks.reduce((sum, t) => sum + t.duration, 0);
+            const remainingMinutes = totalAvailableMinutes - totalTaskMinutes;
+
+            totalAvailableElem.innerText = `${totalAvailableMinutes}분`;
+            totalTaskElem.innerText = `${totalTaskMinutes}분`;
+
+            if (remainingMinutes < 0) {
+                remainingElem.innerText = `⚠️ ${Math.abs(remainingMinutes)}분 부족!`;
+                remainingElem.className = "font-orbitron text-xs text-[#ff4757] font-extrabold";
+            } else {
+                remainingElem.innerText = `✨ 여유 시간: ${remainingMinutes}분`;
+                remainingElem.className = "font-orbitron text-xs text-[#ccff00] font-extrabold";
+            }
+        }
+
+        function renderTasks() {
+            const listContainer = document.getElementById('task-list');
+            const countLabel = document.getElementById('task-count');
+            listContainer.innerHTML = '';
+
+            countLabel.innerText = `${tasks.length}개 항목`;
+
+            if (tasks.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-6 text-[#9e9ea7] text-xs border border-dashed border-[#2e3240] rounded-xl">
+                        할 일을 추가하거나 빠른 루틴에서 등록해보세요!
+                    </div>
+                `;
+                calculateTimeBudget();
+                return;
+            }
+
+            tasks.forEach((task, index) => {
+                const item = document.createElement('div');
+                item.className = 'task-item bg-[#252936] border border-[#2e3240] rounded-xl p-2.5 flex items-center justify-between gap-2';
+                
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2.5 overflow-hidden">
+                        <span class="font-orbitron text-xs font-bold text-[#ccff00] w-4 text-center flex-shrink-0">${index + 1}</span>
+                        <div class="truncate">
+                            <span class="text-xs font-semibold text-white block truncate">${escapeHtml(task.name)}</span>
+                            <span class="text-[11px] text-[#9e9ea7] font-medium">${task.duration}분</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-0.5 flex-shrink-0">
+                        <button onclick="moveTask(${index}, -1)" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed text-gray-500 p-1"' : 'class="text-gray-400 hover:text-[#ccff00] p-1 transition-colors"'}>
+                            <i class="fa-solid fa-chevron-up text-xs"></i>
+                        </button>
+                        <button onclick="moveTask(${index}, 1)" ${index === tasks.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed text-gray-500 p-1"' : 'class="text-gray-400 hover:text-[#ccff00] p-1 transition-colors"'}>
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </button>
+                        <button onclick="removeTask(${index})" class="text-gray-500 hover:text-[#ff4757] p-1 ml-1 transition-colors">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+
+            calculateTimeBudget();
+        }
+
+        function addTask() {
+            const nameInput = document.getElementById('task-name');
+            const durationInput = document.getElementById('task-duration');
+
+            const name = nameInput.value.trim();
+            const duration = parseInt(durationInput.value, 10);
+
+            if (!name) {
+                showToast("할 일 이름을 입력해주세요!");
+                nameInput.focus();
+                return;
+            }
+
+            if (isNaN(duration) || duration <= 0) {
+                showToast("소요 시간을 (분) 단위로 입력하세요!");
+                durationInput.focus();
+                return;
+            }
+
+            tasks.push({ id: Date.now(), name, duration });
+            renderTasks();
+
+            nameInput.value = '';
+            durationInput.value = '';
+            nameInput.focus();
+        }
+
+        function moveTask(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= tasks.length) return;
+
+            const temp = tasks[index];
+            tasks[index] = tasks[newIndex];
+            tasks[newIndex] = temp;
+
+            renderTasks();
+        }
+
+        function removeTask(index) {
+            tasks.splice(index, 1);
+            renderTasks();
+        }
+
+        function clearAllTasks() {
+            if (tasks.length === 0) {
+                showToast("초기화할 할 일이 없습니다.");
+                return;
+            }
+
+            tasks = [];
+            document.getElementById('task-name').value = '';
+            document.getElementById('task-duration').value = '';
+            renderTasks();
+            showToast("할 일 목록이 초기화되었습니다.");
+        }
+
+        function startAttack() {
+            const targetTimeValue = document.getElementById('target-time').value;
+
+            if (!targetTimeValue) {
+                showToast('목표 약속/출발 시간을 입력해주세요.');
+                return;
+            }
+
+            if (tasks.length === 0) {
+                showToast('최소 하나 이상의 할 일을 추가해 주세요!');
+                return;
+            }
+
+            const now = new Date();
+            const [hours, minutes] = targetTimeValue.split(':');
+            targetTimeObject = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(hours, 10), parseInt(minutes, 10), 0);
+
+            if (targetTimeObject < now) {
+                targetTimeObject.setDate(targetTimeObject.getDate() + 1);
+            }
+
+            document.getElementById('setup-view').classList.add('hidden');
+            document.getElementById('active-view').classList.remove('hidden');
+            document.getElementById('active-view').classList.add('flex');
+
+            currentTaskIndex = 0;
+            startTargetCountdown();
+            loadTask(currentTaskIndex);
+        }
+
+        function startTargetCountdown() {
+            updateTargetDisplay();
+            clearInterval(targetTimerInterval);
+            targetTimerInterval = setInterval(updateTargetDisplay, 1000);
+        }
+
+        function updateTargetDisplay() {
+            const now = new Date();
+            const diffMs = targetTimeObject - now;
+            const targetElement = document.getElementById('target-countdown');
+
+            if (diffMs <= 0) {
+                targetElement.innerText = "00:00:00";
+                targetElement.classList.add('text-[#ff4757]');
+                return;
+            }
+
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+            targetElement.innerText = 
+                `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function loadTask(index) {
+            if (index >= tasks.length) {
+                showSuccess();
+                return;
+            }
+
+            const task = tasks[index];
+            document.getElementById('step-badge').innerText = `STEP ${index + 1}/${tasks.length}`;
+            document.getElementById('current-task-name').innerText = task.name;
+
+            const nextContainer = document.getElementById('next-task-container');
+            if (index + 1 < tasks.length) {
+                const next = tasks[index + 1];
+                document.getElementById('next-task-info').innerText = `${next.name} (${next.duration}분)`;
+                nextContainer.classList.remove('hidden');
+            } else {
+                document.getElementById('next-task-info').innerText = '마지막 단계입니다!';
+            }
+
+            timeRemaining = task.duration * 60;
+            updateTaskTimerDisplay();
+
+            clearInterval(taskTimerInterval);
+            taskTimerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTaskTimerDisplay();
+
+                if (timeRemaining <= 0) {
+                    clearInterval(taskTimerInterval);
+                    showToast(`시간 종료! '${task.name}' 완료 후 다음 단계로!`);
+                }
+            }, 1000);
+        }
+
+        function updateTaskTimerDisplay() {
+            const timerElement = document.getElementById('timer');
+            const absTime = Math.abs(timeRemaining);
+            const minutes = Math.floor(absTime / 60);
+            const seconds = absTime % 60;
+
+            const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            timerElement.innerText = formatted;
+
+            if (timeRemaining < 60) {
+                timerElement.classList.add('timer-danger');
+            } else {
+                timerElement.classList.remove('timer-danger');
+            }
+        }
+
+        function nextTask() {
+            clearInterval(taskTimerInterval);
+            currentTaskIndex++;
+
+            if (currentTaskIndex < tasks.length) {
+                const randomCheer = cheerMessages[Math.floor(Math.random() * cheerMessages.length)];
+                showToast(randomCheer);
+            }
+
+            loadTask(currentTaskIndex);
+        }
+
+        function showSuccess() {
+            clearInterval(taskTimerInterval);
+            clearInterval(targetTimerInterval);
+            document.getElementById('active-view').classList.add('hidden');
+            document.getElementById('active-view').classList.remove('flex');
+            document.getElementById('success-view').classList.remove('hidden');
+        }
+
+        function resetAll() {
+            clearInterval(taskTimerInterval);
+            clearInterval(targetTimerInterval);
+            currentTaskIndex = 0;
+
+            document.getElementById('setup-view').classList.remove('hidden');
+            document.getElementById('active-view').classList.add('hidden');
+            document.getElementById('active-view').classList.remove('flex');
+            document.getElementById('success-view').classList.add('hidden');
+            calculateTimeBudget();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.innerText = msg;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
